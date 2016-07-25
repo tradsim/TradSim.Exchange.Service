@@ -20,3 +20,13 @@ let setOrderStatus order =
     elif order.Quantity < order.OriginalQuantity then { order with Status = OrderStatus.PartiallyFilled }
     elif order.Quantity = order.OriginalQuantity then { order with Status = OrderStatus.FullyFilled }    
     else { order with Status = OrderStatus.OverFilled }
+
+type OrderPriceEntry = {
+    Quantity: int
+    Orders: Order list
+}
+
+let appendToPriceEntry entry order=
+    match entry with
+    | None -> { Quantity = order.OriginalQuantity; Orders = [order]}  
+    | Some(e) -> {e with Quantity = e.Quantity + order.OriginalQuantity; Orders= List.append e.Orders [order]}
