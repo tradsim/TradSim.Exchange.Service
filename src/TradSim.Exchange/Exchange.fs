@@ -27,50 +27,68 @@ type OrderQuantity = {
     Orders: Order list
 }
 
-let appendOrderToOrderQuantity entry order=
-    match entry with
-    | None -> { Quantity = order.OriginalQuantity; Orders = [order]}  
-    | Some(e) -> {e with Quantity = e.Quantity + order.OriginalQuantity; Orders= List.append e.Orders [order]}
-
 type OrderPrice = {
     Price:decimal
     Buy: OrderQuantity
-    Sell: OrderQuantity 
+    Sell: OrderQuantity
 }
 
 type OrderBook = {
     Symbol: Dictionary<string,OrderPrice list>
 }
 
+let appendOrderToOrderQuantity order quantity=
+    {quantity with Quantity = quantity.Quantity + order.OriginalQuantity; Orders= List.append quantity.Orders [order]}
+     
+
 let createOrderPrice order =
     match order.Direction with
-    | TradeDirection.Buy  -> { Price=order.Price; Buy = appendOrderToOrderQuantity None order ; Sell = { Quantity=0; Orders=[]} }
-    | TradeDirection.Sell -> { Price=order.Price; Buy = { Quantity=0; Orders=[]} ; Sell = appendOrderToOrderQuantity None order  }
+    | TradeDirection.Buy  -> { Price=order.Price; Buy = appendOrderToOrderQuantity order { Quantity=0; Orders=[]}  ; Sell = { Quantity=0; Orders=[]} }
+    | TradeDirection.Sell -> { Price=order.Price; Buy = { Quantity=0; Orders=[]} ; Sell = appendOrderToOrderQuantity order { Quantity=0; Orders=[]} }
     | _                   -> raise <| new ArgumentOutOfRangeException("Direction",order.Direction,"Direction is not supported!")
 
-let matchOrderPrice price orderPrice  =
-    orderPrice.Price = price
+let appendOrderToOrderPrice order price =
+    match order.Direction with
+    | TradeDirection.Buy  -> { price with Buy = appendOrderToOrderQuantity order price.Buy  }
+    | TradeDirection.Sell -> { price with Sell = appendOrderToOrderQuantity order price.Sell }
+    | _                   -> raise <| new ArgumentOutOfRangeException("Direction",order.Direction,"Direction is not supported!")
 
-let matchOrderPriceList (prices:OrderPrice list) price =
-      let filtered = List.filter (matchOrderPrice price) prices
-      match List.length filtered with
-      | 0 -> None
-      | 1 -> Some (filtered.Item 0)
-      | _ -> raise <| new Exception("Only one order price should exist!")
+let addOrderToOrderBook (order:Order) book =
 
-// processOrder
-//  if book does not contain symbol then addOrderToOrderBook
-//  if it contains symbol processSymbolOrder
+    let mutable tradeAble = false
+    if book.Symbol.ContainsKey(order.Symbol) then
+        let mutable found = false
+        let prices = List.map (fun pr -> if pr.Price = order.Price then found <- true                                                                        
+                                                                        appendOrderToOrderPrice order pr                                                                                                                                                                                                
+                                         else pr) book.Symbol.[order.Symbol]
+
+        if found then
+            tradeAble <- true
+            book.Symbol.[order.Symbol] <- prices
+        else 
+            book.Symbol.[order.Symbol] <- createOrderPrice order :: prices |> List.sortBy (fun price -> price.Price)        
+    else
+        book.Symbol.Add(order.Symbol,[createOrderPrice order])        
+         
+    // Send order created event
+
+    if tradeAble then Some order.Price else None
+                                    
 
 // let processOrder book (order:Order) =
 
 //     if book.Symbol.ContainsKey(order.Symbol) then
 //         match matchOrderPrices (book.Symbol.Item order.Symbol) order with
-//         | None book.Symbol.[order.Symbol] <- prices 
-//         | Some(p)
+//         | None -> book.Symbol.[order.Symbol] <- prices 
+//         | Some(p) ->
 
 //         let prices = processOrderPrices (book.Symbol.Item order.Symbol) order
         
 //     else
 //         book.Symbol.Add(order.Symbol,[createOrderPrice order])    
+
+
+// processOrder
+//  Add order to book
+//  Trade Order
 
