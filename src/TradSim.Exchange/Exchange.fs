@@ -72,8 +72,33 @@ let addOrderToOrderBook (order:Order) book =
          
     // Send order created event
 
-    if tradeAble then Some order.Price else None
+    if tradeAble then true else false
+
+let tradeOrders (orderBuy:Order) (orderSell:Order) =
+    let mutable orderBuyQuantity = orderBuy.Quantity
+    let mutable orderSellQuantity = orderSell.Quantity
+    if orderBuyQuantity > orderSellQuantity then
+        orderBuyQuantity <- orderBuyQuantity - orderSellQuantity
+        orderSellQuantity <- 0
+         
+    elif orderBuyQuantity < orderSellQuantity then
+        orderSellQuantity <- orderSellQuantity - orderBuyQuantity
+        orderBuyQuantity <- 0
+        
+    else 
+        orderBuyQuantity <- 0
+        orderSellQuantity <- 0
                                     
+    // Send Buy Trade with orderBuy.Quantity - orderBuyQuantity
+    // Send Sell Trade with orderSell.Quantity - orderSellQuantity
+    ({orderBuy with Quantity= orderBuyQuantity},{orderSell with Quantity = orderSellQuantity})
+
+
+// let tradeOrderInOrderBook symbol price book =
+//         let prices = List.map (fun pr -> if pr.Price = price then tradeSymbolPrice pr                                                                                                                                                                                                 
+//                                          else pr) book.Symbol.[symbol]
+//         book.Symbol.[symbol] <- prices
+
 
 // let processOrder book (order:Order) =
 

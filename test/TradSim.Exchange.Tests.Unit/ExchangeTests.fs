@@ -77,8 +77,8 @@ let ``addOrderToOrderBook: Add Order to empty`` () =
     let order = { Id=Guid.NewGuid() ; Symbol="TT"; Price=10.0m; Quantity = 10; OriginalQuantity = 10; Direction= TradeDirection.Buy; Status=OrderStatus.FullyFilled }
     let book = { Symbol= new Dictionary<string,OrderPrice list>() }
 
-    let price = addOrderToOrderBook order book
-    Assert.True(Option.isNone price)
+    let toTrade = addOrderToOrderBook order book
+    Assert.False(toTrade)
     let symbolPrice =book.Symbol.["TT"] 
     Assert.Equal(1,symbolPrice.Length)
     Assert.Equal(order.Price,symbolPrice.[0].Price)
@@ -91,10 +91,10 @@ let ``addOrderToOrderBook: Add two buy orders`` () =
     let order2 = { Id=Guid.NewGuid() ; Symbol="TT"; Price=10.0m; Quantity = 10; OriginalQuantity = 15; Direction= TradeDirection.Buy; Status=OrderStatus.FullyFilled }
     let book = { Symbol= new Dictionary<string,OrderPrice list>() }
 
-    let price = addOrderToOrderBook order1 book
-    let price = addOrderToOrderBook order2 book
+    let toTrade = addOrderToOrderBook order1 book
+    let toTrade = addOrderToOrderBook order2 book
 
-    Assert.True(Option.isSome price, "Price expected")
+    Assert.True(toTrade)
     let symbolPrice =book.Symbol.["TT"] 
     Assert.Equal(1,symbolPrice.Length)
     Assert.Equal(order1.Price,symbolPrice.[0].Price)
@@ -107,10 +107,10 @@ let ``addOrderToOrderBook: Add one buy one sell same price`` () =
     let order1 = { Id=Guid.NewGuid() ; Symbol="TT"; Price=10.0m; Quantity = 10; OriginalQuantity = 10; Direction= TradeDirection.Buy; Status=OrderStatus.FullyFilled }
     let order2 = { Id=Guid.NewGuid() ; Symbol="TT"; Price=10.0m; Quantity = 10; OriginalQuantity = 15; Direction= TradeDirection.Sell; Status=OrderStatus.FullyFilled }
     let book = { Symbol = new Dictionary<string,OrderPrice list>() }
-    let price = addOrderToOrderBook order1 book    
-    let price = addOrderToOrderBook order2 book
+    let toTrade = addOrderToOrderBook order1 book    
+    let toTrade = addOrderToOrderBook order2 book
     
-    Assert.True(Option.isSome price, "Price expected")
+    Assert.True(toTrade)
     let symbolPrices = book.Symbol.["TT"]
     Assert.Equal(1,symbolPrices.Length)
     let symbolPrice = symbolPrices.[0]
@@ -129,12 +129,12 @@ let ``addOrderToOrderBook: Add one buy one sell at 12 and one buy one sell at 11
     let orderBuy11 = { Id=Guid.NewGuid() ; Symbol="TT"; Price=11.0m; Quantity = 10; OriginalQuantity = 4; Direction= TradeDirection.Buy; Status=OrderStatus.FullyFilled }
     
     let book = { Symbol = new Dictionary<string,OrderPrice list>() }
-    let price = addOrderToOrderBook orderSell12 book    
-    let price = addOrderToOrderBook orderBuy11 book
-    let price = addOrderToOrderBook orderBuy12 book
-    let price = addOrderToOrderBook orderSell11 book
+    let toTrade = addOrderToOrderBook orderSell12 book    
+    let toTrade = addOrderToOrderBook orderBuy11 book
+    let toTrade = addOrderToOrderBook orderBuy12 book
+    let toTrade = addOrderToOrderBook orderSell11 book
     
-    Assert.True(Option.isSome price, "Price expected")
+    Assert.True(toTrade)
     let symbolPrices = book.Symbol.["TT"]
     Assert.Equal(2,symbolPrices.Length)
     let symbolPrice11 = symbolPrices.[0]
@@ -150,3 +150,34 @@ let ``addOrderToOrderBook: Add one buy one sell at 12 and one buy one sell at 11
     Assert.Equal(1, symbolPrice12.Sell.Quantity)
     Assert.Equal(orderBuy12,symbolPrice12.Buy.Orders.[0])
     Assert.Equal(orderSell12,symbolPrice12.Sell.Orders.[0])
+
+[<Fact>]
+let ``tradeOrders: trade equal orders`` () =
+    
+    let orderSell = { Id=Guid.NewGuid() ; Symbol="TT"; Price=12.0m; Quantity = 10; OriginalQuantity = 10; Direction= TradeDirection.Sell; Status=OrderStatus.FullyFilled }
+    let orderBuy = { Id=Guid.NewGuid() ; Symbol="TT"; Price=12.0m; Quantity = 10; OriginalQuantity = 10; Direction= TradeDirection.Buy; Status=OrderStatus.FullyFilled }
+
+    let (orderBuyTraded,orderSellTraded) = tradeOrders orderBuy orderSell
+    Assert.Equal(0,orderBuyTraded.Quantity)
+    Assert.Equal(0,orderSellTraded.Quantity)
+
+[<Fact>]
+let ``tradeOrders: buy > sell`` () =
+    
+    let orderSell = { Id=Guid.NewGuid() ; Symbol="TT"; Price=12.0m; Quantity = 10; OriginalQuantity = 10; Direction= TradeDirection.Sell; Status=OrderStatus.FullyFilled }
+    let orderBuy = { Id=Guid.NewGuid() ; Symbol="TT"; Price=12.0m; Quantity = 12; OriginalQuantity = 10; Direction= TradeDirection.Buy; Status=OrderStatus.FullyFilled }
+
+    let (orderBuyTraded,orderSellTraded) = tradeOrders orderBuy orderSell
+    Assert.Equal(2,orderBuyTraded.Quantity)
+    Assert.Equal(0,orderSellTraded.Quantity)
+
+[<Fact>]
+let ``tradeOrders: sell > buy`` () =
+    
+    let orderSell = { Id=Guid.NewGuid() ; Symbol="TT"; Price=12.0m; Quantity = 15; OriginalQuantity = 10; Direction= TradeDirection.Sell; Status=OrderStatus.FullyFilled }
+    let orderBuy = { Id=Guid.NewGuid() ; Symbol="TT"; Price=12.0m; Quantity = 12; OriginalQuantity = 10; Direction= TradeDirection.Buy; Status=OrderStatus.FullyFilled }
+
+    let (orderBuyTraded,orderSellTraded) = tradeOrders orderBuy orderSell
+    Assert.Equal(0,orderBuyTraded.Quantity)
+    Assert.Equal(3,orderSellTraded.Quantity)
+    
