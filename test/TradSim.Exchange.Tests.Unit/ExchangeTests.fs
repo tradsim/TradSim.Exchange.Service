@@ -157,7 +157,7 @@ let ``tradeOrders: trade equal orders`` () =
     let orderSell = { Id=Guid.NewGuid() ; Symbol="TT"; Price=12.0m; Quantity = 10; OriginalQuantity = 10; Direction= TradeDirection.Sell; Status=OrderStatus.FullyFilled }
     let orderBuy = { Id=Guid.NewGuid() ; Symbol="TT"; Price=12.0m; Quantity = 10; OriginalQuantity = 10; Direction= TradeDirection.Buy; Status=OrderStatus.FullyFilled }
 
-    let (orderBuyTraded,orderSellTraded) = tradeOrders orderBuy orderSell
+    let (orderBuyTraded,orderSellTraded) = trade orderBuy orderSell
     Assert.Equal(0,orderBuyTraded.Quantity)
     Assert.Equal(0,orderSellTraded.Quantity)
 
@@ -167,7 +167,7 @@ let ``tradeOrders: buy > sell`` () =
     let orderSell = { Id=Guid.NewGuid() ; Symbol="TT"; Price=12.0m; Quantity = 10; OriginalQuantity = 10; Direction= TradeDirection.Sell; Status=OrderStatus.FullyFilled }
     let orderBuy = { Id=Guid.NewGuid() ; Symbol="TT"; Price=12.0m; Quantity = 12; OriginalQuantity = 10; Direction= TradeDirection.Buy; Status=OrderStatus.FullyFilled }
 
-    let (orderBuyTraded,orderSellTraded) = tradeOrders orderBuy orderSell
+    let (orderBuyTraded,orderSellTraded) = trade orderBuy orderSell
     Assert.Equal(2,orderBuyTraded.Quantity)
     Assert.Equal(0,orderSellTraded.Quantity)
 
@@ -177,7 +177,7 @@ let ``tradeOrders: sell > buy`` () =
     let orderSell = { Id=Guid.NewGuid() ; Symbol="TT"; Price=12.0m; Quantity = 15; OriginalQuantity = 10; Direction= TradeDirection.Sell; Status=OrderStatus.FullyFilled }
     let orderBuy = { Id=Guid.NewGuid() ; Symbol="TT"; Price=12.0m; Quantity = 12; OriginalQuantity = 10; Direction= TradeDirection.Buy; Status=OrderStatus.FullyFilled }
 
-    let (orderBuyTraded,orderSellTraded) = tradeOrders orderBuy orderSell
+    let (orderBuyTraded,orderSellTraded) = trade orderBuy orderSell
     Assert.Equal(0,orderBuyTraded.Quantity)
     Assert.Equal(3,orderSellTraded.Quantity)
     

@@ -74,7 +74,7 @@ let addOrderToOrderBook (order:Order) book =
 
     if tradeAble then true else false
 
-let tradeOrders (orderBuy:Order) (orderSell:Order) =
+let trade (orderBuy:Order) (orderSell:Order) =
     let mutable orderBuyQuantity = orderBuy.Quantity
     let mutable orderSellQuantity = orderSell.Quantity
     if orderBuyQuantity > orderSellQuantity then
@@ -92,7 +92,6 @@ let tradeOrders (orderBuy:Order) (orderSell:Order) =
     // Send Buy Trade with orderBuy.Quantity - orderBuyQuantity
     // Send Sell Trade with orderSell.Quantity - orderSellQuantity
     ({orderBuy with Quantity= orderBuyQuantity},{orderSell with Quantity = orderSellQuantity})
-
 
 // let tradeOrderInOrderBook symbol price book =
 //         let prices = List.map (fun pr -> if pr.Price = price then tradeSymbolPrice pr                                                                                                                                                                                                 
